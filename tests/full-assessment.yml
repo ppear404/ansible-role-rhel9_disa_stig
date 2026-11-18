@@ -1,0 +1,68 @@
+---
+- name: Assess all RHEL 9 V2R10 controls
+  hosts: rhel9
+  become: true
+  gather_facts: false
+  vars_files:
+    - evaluator-vars.yml
+  tasks:
+    - name: Stage the role answer file in the installed evaluator
+      ansible.builtin.copy:
+        src: '{{ playbook_dir | dirname }}/files/RHEL9_Answerfile.xml'
+        dest: '{{ evaluator_root }}/AnswerFiles/RHEL9_Answerfile.xml'
+        owner: root
+        group: root
+        mode: '0600'
+      when: evaluator_use_answer_file | bool
+    - name: Create an empty answer directory for a native scan
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: rhel9-stig-native-answers-
+      register: native_answers
+      when: not (evaluator_use_answer_file | bool)
+    - name: Create private evaluator output directory
+      ansible.builtin.file:
+        path: '{{ evaluator_output_dir }}'
+        state: directory
+        mode: '0700'
+    - name: Run the complete assessment
+      ansible.builtin.command:
+        argv: >-
+          {{ ['pwsh', '-NoProfile', '-File', evaluator_root + '/Evaluate-STIG.ps1',
+              '-SelectSTIG', 'RHEL9', '-Output', 'Console,CKLB',
+              '-OutputPath', evaluator_output_dir, '-JSON'] +
+             (['-AFPath', evaluator_root + '/AnswerFiles', '-AnswerKey', evaluator_answer_key]
+              if evaluator_use_answer_file | bool else ['-AFPath', native_answers.path]) }}
+      register: assessment
+      changed_when: false
+    - name: Remove the temporary native answer directory
+      ansible.builtin.file:
+        path: '{{ native_answers.path }}'
+        state: absent
+      when: not (evaluator_use_answer_file | bool)
+    - name: Create private controller artifact directory
+      ansible.builtin.file:
+        path: '{{ evaluator_artifacts_dir }}'
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+    - name: Save the full assessment JSON and evaluator messages
+      ansible.builtin.copy:
+        content: "{{ assessment.stdout }}\n{{ assessment.stderr }}\n"
+        dest: '{{ evaluator_artifacts_dir }}/{{ phase | default("full-assessment") }}.txt'
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+
+    - name: Find generated checklists
+      ansible.builtin.find:
+        paths: '{{ evaluator_output_dir }}'
+        patterns: '*.cklb'
+        recurse: true
+      register: checklists
+    - name: Fetch the latest checklist
+      ansible.builtin.fetch:
+        src: '{{ (checklists.files | sort(attribute="mtime") | last).path }}'
+        dest: '{{ evaluator_artifacts_dir }}/'
+        flat: true

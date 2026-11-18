@@ -1,0 +1,41 @@
+---
+- name: Install PowerShell on RHEL 9
+  hosts: rhel9
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Require RHEL 9 x86_64
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'RedHat'
+          - ansible_facts.distribution_major_version == '9'
+          - ansible_facts.architecture == 'x86_64'
+    - name: Import Microsoft package signing key
+      ansible.builtin.rpm_key:
+        key: https://packages.microsoft.com/keys/microsoft.asc
+        fingerprint: BC52 8686 B50D 79E3 39D3 721C EB3E 94AD BE12 29CF
+        state: present
+    - name: Configure Microsoft RHEL 9 repository
+      ansible.builtin.get_url:
+        url: https://packages.microsoft.com/config/rhel/9/prod.repo
+        dest: /etc/yum.repos.d/microsoft-prod.repo
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Install PowerShell
+      ansible.builtin.dnf:
+        name: powershell
+        state: present
+      register: powershell_package
+    - name: Gather service state
+      ansible.builtin.service_facts:
+    - name: Refresh active fapolicyd package trust after installation
+      ansible.builtin.command: fapolicyd-cli --update
+      changed_when: true
+      when:
+        - powershell_package is changed
+        - ansible_facts.services.get('fapolicyd.service', {}).get('state', '') == 'running'
+    - name: Verify PowerShell
+      ansible.builtin.command: pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+      changed_when: false
+      when: not ansible_check_mode

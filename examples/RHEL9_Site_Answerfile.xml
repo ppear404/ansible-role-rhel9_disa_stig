@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<STIGComments Name="RHEL9">
+  <Vuln ID="V-258047">
+    <AnswerKey Name="SITE_POLICY">
+      <Answer Index="1" ExpectedStatus="NR">
+        <ValidationCode/>
+        <ValidTrueStatus>NR</ValidTrueStatus>
+        <ValidTrueComment>TEMPLATE ONLY: no site approval is provided; status remains Not Reviewed. Security plan procedure: The SA rejects requests to create temporary accounts and uses the normal authorization process for named permanent accounts. The SA and ISSO review local and centrally managed account inventories against approved account records at least monthly and after account changes. Any discovered temporary or unapproved account is promptly disabled, investigated with the ISSO, and removed through the account management process. If temporary accounts become necessary, obtain authorization for a policy change, withdraw this answer, and configure and verify expiration within 72 hours before use, using chage -l to verify each account's expiration. Emergency or break-glass accounts are distinct from temporary accounts and are reviewed under their applicable requirements. Retain the prohibition, review records, and any investigation evidence in the security plan.</ValidTrueComment>
+        <ValidFalseStatus>NR</ValidFalseStatus>
+        <ValidFalseComment>Site evidence requires review; no assessment exception is applied.</ValidFalseComment>
+      </Answer>
+    </AnswerKey>
+  </Vuln>
+  <Vuln ID="V-258132">
+    <AnswerKey Name="SITE_POLICY">
+      <Answer Index="1" ExpectedStatus="NR">
+        <ValidationCode/>
+        <ValidTrueStatus>NR</ValidTrueStatus>
+        <ValidTrueComment>TEMPLATE ONLY: no site approval is provided; status remains Not Reviewed. Security plan procedure: Before enabling PKI login, document approved certificate-to-account mappings, test an authorized login and a mismatched identity, and review mappings after changes and quarterly. Retain the approval and test evidence. Review applicability where PKI is not deployed.</ValidTrueComment>
+        <ValidFalseStatus>NR</ValidFalseStatus>
+        <ValidFalseComment>Site evidence requires review; no assessment exception is applied.</ValidFalseComment>
+      </Answer>
+    </AnswerKey>
+  </Vuln>
+  <Vuln ID="V-258155">
+    <AnswerKey Name="SITE_POLICY">
+      <Answer Index="1" ExpectedStatus="NR">
+        <ValidationCode/>
+        <ValidTrueStatus>NR</ValidTrueStatus>
+        <ValidTrueComment>TEMPLATE ONLY: no site approval is provided; status remains Not Reviewed. Security plan procedure: The SA monitors local audit-filesystem capacity and the audit forwarding/collector health, verifies timely audit ingestion in Splunk at least daily and after forwarding changes, and retains monitoring and ingestion evidence. Alert the SA/ISSO on forwarding failure, ingestion lag or low local space; investigate promptly and restore forwarding or provide sufficient local capacity for the interruption. If immediate central collection cannot be maintained, reassess this determination and size local audit storage to retain at least one week's records using measured activity before relying on this answer. Document the Splunk destination/ownership, monitoring alert thresholds and escalation contacts, and central retention requirements in the security plan; review after audit workload or architecture changes. The local capacity snapshot is supporting evidence only, not a seven-day volume calculation.</ValidTrueComment>
+        <ValidFalseStatus>NR</ValidFalseStatus>
+        <ValidFalseComment>Site evidence requires review; no assessment exception is applied.</ValidFalseComment>
+      </Answer>
+    </AnswerKey>
+  </Vuln>
+  <Vuln ID="V-257879">
+    <AnswerKey Name="SITE_POLICY">
+      <Answer Index="1" ExpectedStatus="NR">
+        <ValidationCode/>
+        <ValidTrueStatus>NR</ValidTrueStatus>
+        <ValidTrueComment>TEMPLATE ONLY: no site approval is provided; status remains Not Reviewed. Security plan procedure: The virtualization/storage administrator verifies that every VM disk containing information requiring at-rest protection resides on encrypted storage and that required protection continues across storage migration, cloning, snapshots and backup/export paths. Document the covered VM/datastore mapping, encryption mechanism and applicable cryptographic assurance, key-management/access controls, approval reference and responsible owner. Review coverage after VM/storage changes and at least quarterly; investigate encryption or key-management failures and remediate uncovered storage. If external encryption no longer covers the required data, withdraw this determination and implement approved at-rest protection before relying on this answer.</ValidTrueComment>
+        <ValidFalseStatus>NR</ValidFalseStatus>
+        <ValidFalseComment>Site evidence requires review; no assessment exception is applied.</ValidFalseComment>
+      </Answer>
+    </AnswerKey>
+  </Vuln>
+  <Vuln ID="V-257778">
+    <AnswerKey Name="SITE_POLICY">
+      <Answer Index="1" ExpectedStatus="NR">
+        <ValidationCode/>
+        <ValidTrueStatus>NR</ValidTrueStatus>
+        <ValidTrueComment>TEMPLATE ONLY: no site approval is provided; status remains Not Reviewed. Security plan procedure: The SA reviews vendor security advisories and repository security-update availability at least weekly, obtains approved RHEL content through the site repository or entitlement service, tests and installs applicable security updates within organizational remediation deadlines, and reboots when required. Retain advisory applicability, patch/change records and post-update verification. Escalate failed repository access or overdue updates to the ISSO and track remediation to closure. This manual procedure is recorded for the security plan; it does not assert that this unregistered dev guest has current vendor patches.</ValidTrueComment>
+        <ValidFalseStatus>NR</ValidFalseStatus>
+        <ValidFalseComment>Site evidence requires review; no assessment exception is applied.</ValidFalseComment>
+      </Answer>
+    </AnswerKey>
+  </Vuln>
+  <Vuln ID="V-257945">
+    <AnswerKey Name="SITE_POLICY">
+      <Answer Index="1" ExpectedStatus="NR">
+        <ValidationCode>$ErrorActionPreference = 'Stop'
+try {
+    foreach ($op in @('is-enabled','is-active')) {
+        $state = @(&amp; systemctl $op chronyd.service 2&gt;&amp;1)
+        if ($LASTEXITCODE -ne 0) { throw "chronyd $op failed" }
+    }
+    $lines = @(Get-Content -LiteralPath '/etc/chrony.conf' | Where-Object { $_ -match '^\s*(server|pool|peer)\s+' })
+    if ($lines.Count -eq 0) { throw 'No configured time sources' }
+    foreach ($line in $lines) {
+        if ($line -notmatch '\bmaxpoll\s+([0-9]+)(?:\s|$)' -or [int]$Matches[1] -gt 16) { throw 'Missing or excessive maxpoll' }
+    }
+    $tracking = @(&amp; chronyc tracking 2&gt;&amp;1)
+    if ($LASTEXITCODE -ne 0 -or ($tracking -join "`n") -notmatch 'Leap status\s*:\s*Normal') { throw 'Chrony is not synchronized' }
+    return @{ Valid = $true; Results = "Chrony enabled/active, maxpoll &lt;=16 and synchronized. Configured sources: $($lines -join '; '). Source authority is a manual security-plan determination, not established by synchronization." }
+} catch { return @{ Valid = $false; Results = $_.Exception.Message } }</ValidationCode>
+        <ValidTrueStatus>NR</ValidTrueStatus>
+        <ValidTrueComment>TEMPLATE ONLY: no site approval is provided; status remains Not Reviewed. Security plan procedure: The SA records the authoritative DoW upstream source and its approval for each deployed system, verifies the source configuration after changes and quarterly, and monitors Chrony synchronization and maximum polling daily. Replace the dev public pools with site-approved authoritative DoW servers before relying on this configuration for an operational compliance determination; retain source/approval references and verification records. Investigate unsynchronized clocks or source drift promptly.</ValidTrueComment>
+        <ValidFalseStatus>NR</ValidFalseStatus>
+        <ValidFalseComment>Site evidence requires review; no assessment exception is applied.</ValidFalseComment>
+      </Answer>
+    </AnswerKey>
+  </Vuln>
+</STIGComments>

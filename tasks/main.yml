@@ -1,0 +1,24 @@
+---
+- name: Require a supported RHEL 9 host
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'RedHat'
+      - ansible_facts.distribution_major_version == '9'
+      - ansible_facts.architecture == 'x86_64'
+    fail_msg: This role targets RHEL 9 x86_64.
+  tags: [always]
+
+- name: Include category 2 tasks
+  ansible.builtin.include_tasks: cat2.yml
+  tags: [always]
+
+- name: Report controls requiring site configuration
+  ansible.builtin.debug:
+    msg:
+      - 'V-257789 requires grub_password_hash: {{ grub_password_hash is defined }}'
+      - 'V-258174 mail recipients supplied: {{ rhel9_stig_root_mail_recipients | length > 0 }}'
+      - 'V-257945 time sources supplied: {{ rhel9_stig_time_servers | length > 0 }}'
+      - 'V-258058 account approval supplied: {{ rhel9_stig_authorized_local_accounts | length > 0 }}'
+      - 'V-257937/V-257940 firewall approval supplied: {{ rhel9_stig_firewall_approval | length > 0 }}'
+      - 'V-258038 deny-all USB policy enabled: {{ rhel9_stig_usb_deny_all | bool }}'
+  tags: [always]

@@ -1,0 +1,17 @@
+---
+# Site-dependent controls are enabled when their inputs are supplied.
+mount_options:
+  - {path: /home, opts: 'nodev,nosuid,noexec'}
+  - {path: /tmp, opts: 'nodev,nosuid,noexec'}
+  - {path: /var, opts: nodev}
+  - {path: /var/log, opts: 'nodev,nosuid,noexec'}
+  - {path: /var/log/audit, opts: 'nodev,nosuid,noexec'}
+  - {path: /var/tmp, opts: 'nodev,nosuid,noexec'}
+  - {path: /boot, opts: 'nodev,nosuid'}
+grub_superuser: grubdev
+rhel9_stig_root_mail_recipients: []
+rhel9_stig_time_servers: []
+rhel9_stig_authorized_local_accounts: []
+rhel9_stig_firewall_approval: {}
+# Enable only after reviewing attached peripherals; the policy blocks all USB.
+rhel9_stig_usb_deny_all: false

@@ -1,0 +1,26 @@
+---
+- name: Configure /dev/shm STIG mount options
+  ansible.posix.mount:
+    path: /dev/shm
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,nodev,nosuid,noexec
+    dump: "0"
+    passno: "0"
+    state: present
+  notify:
+    - Reload_systemd
+    - Remount_dev_shm
+
+- name: Inspect shared memory runtime protections
+  ansible.builtin.command: findmnt --noheadings --output OPTIONS --mountpoint /dev/shm
+  register: rhel9_stig_shm_options
+  changed_when: false
+  check_mode: false
+
+- name: Request shared memory remount when runtime protections are missing
+  ansible.builtin.debug:
+    msg: Applying shared memory protections
+  changed_when: true
+  when: "['nodev', 'nosuid', 'noexec'] | difference(rhel9_stig_shm_options.stdout.split(',')) | length > 0"
+  notify: Remount_dev_shm

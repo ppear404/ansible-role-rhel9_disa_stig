@@ -1,0 +1,12 @@
+---
+- name: Include V-258097 password-auth password quality
+  ansible.builtin.include_tasks:
+    file: pam_pwquality.yml
+    apply:
+      tags:
+        - V-258097
+  vars:
+    rhel9_stig_pwquality_control: V-258097
+    rhel9_stig_pwquality_file: password-auth
+  tags:
+    - V-258097

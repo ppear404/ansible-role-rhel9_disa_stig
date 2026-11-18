@@ -1,0 +1,52 @@
+---
+- name: V-257852 - Inspect the separate home mount
+  ansible.builtin.command: findmnt --noheadings --output OPTIONS --mountpoint /home
+  register: rhel9_stig_home_mount
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: V-257852 - Read persistent mount configuration
+  ansible.builtin.slurp:
+    src: /etc/fstab
+  register: rhel9_stig_fstab
+
+- name: V-257852 - Configure home filesystem execution protection
+  vars:
+    rhel9_stig_home_entries: >-
+      {{ (rhel9_stig_fstab.content | b64decode).splitlines()
+         | select('match', '^[ \t]*[^#\s]\S*[ \t]+/home[ \t]+') | list }}
+  block:
+    - name: V-257852 - Require a separate persistent home filesystem
+      ansible.builtin.assert:
+        that:
+          - rhel9_stig_home_mount.rc == 0
+          - rhel9_stig_home_entries | length == 1
+          - rhel9_stig_home_entries[0].split() | length >= 6
+        fail_msg: >-
+          V-257852 requires a separate mounted /home filesystem with one complete
+          /etc/fstab entry. Provision it before applying this control.
+
+    - name: V-257852 - Persist noexec while preserving other mount settings
+      vars:
+        rhel9_stig_home_fields: "{{ rhel9_stig_home_entries[0].split() }}"
+      ansible.posix.mount:
+        path: /home
+        src: "{{ rhel9_stig_home_fields[0] }}"
+        fstype: "{{ rhel9_stig_home_fields[2] }}"
+        opts: >-
+          {{ (rhel9_stig_home_fields[3].split(',') | reject('equalto', 'exec')
+              | reject('equalto', 'noexec') | list + ['noexec']) | join(',') }}
+        dump: "{{ rhel9_stig_home_fields[4] }}"
+        passno: "{{ rhel9_stig_home_fields[5] }}"
+        state: present
+        backup: true
+      when: "'noexec' not in rhel9_stig_home_fields[3].split(',') or 'exec' in rhel9_stig_home_fields[3].split(',')"
+      notify: Reload_systemd
+
+    - name: V-257852 - Apply noexec to the running home mount
+      ansible.posix.mount:
+        path: /home
+        opts: noexec
+        state: remounted
+      when: "'noexec' not in rhel9_stig_home_mount.stdout.split(',')"

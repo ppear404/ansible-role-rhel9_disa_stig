@@ -1,0 +1,5 @@
+[rhel9]
+rhel9-dev ansible_host=192.0.2.10 ansible_user=automation
+
+# Supply credentials through your SSH agent, SSH config or Ansible Vault.
+# Replace the documentation-only address before deployment.

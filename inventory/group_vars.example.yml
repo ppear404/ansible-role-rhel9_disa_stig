@@ -1,0 +1,18 @@
+---
+# Copy into your private inventory/group_vars/rhel9.yml and review every value.
+# These examples do not constitute approval or enable site-dependent controls.
+grub_superuser: bootmaint
+# grub_password_hash: obtain a unique hash with grub2-mkpasswd-pbkdf2; store in Vault
+rhel9_stig_root_mail_recipients: []
+rhel9_stig_time_servers: []
+rhel9_stig_authorized_local_accounts: []
+rhel9_stig_usb_deny_all: false
+rhel9_stig_firewall_approval: {}
+# Example firewall shape (replace all values with the reviewed baseline):
+# rhel9_stig_firewall_approval:
+#   approval: CHANGE-REFERENCE
+#   zone: public
+#   interfaces: [eth0]
+#   services:
+#     ssh: {ports: 22/tcp, destination: ''}
+#   allow_standard_ipv6_control: true

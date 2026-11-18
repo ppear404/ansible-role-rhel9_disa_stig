@@ -1,0 +1,71 @@
+---
+- name: Evaluate mapped RHEL 9 controls
+  hosts: rhel9
+  become: true
+  gather_facts: false
+  vars_files:
+    - evaluator-vars.yml
+  vars:
+    rhel9_stig_scan_command:
+      - pwsh
+      - -NoProfile
+      - -File
+      - '{{ evaluator_root }}/Evaluate-STIG.ps1'
+      - -SelectSTIG
+      - RHEL9
+      - -SelectVuln
+      - V-257778,V-257816,V-257879,V-258000,V-258047,V-258058,V-258127,V-258132,V-258134,V-258155,V-258171,V-258189,V-258218,V-258228,V-258236,V-258241,V-258106,V-272496,V-257789,V-257792,V-257793,V-257794,V-257795,V-257796,V-257852,V-257861,V-257863,V-257864,V-257865,V-257881,V-257937,V-257940,V-257945,V-257951,V-258038,V-258058,V-258073,V-258097,V-258098,V-258131,V-258135,V-258144,V-258150,V-258174,V-258194,V-258198,V-288832
+      - -Output
+      - Console
+      - -JSON
+  tasks:
+    - name: Create the optional AnswerFile directory
+      ansible.builtin.file:
+        path: /root/stig-answerfiles
+        state: directory
+        mode: '0700'
+      when: use_answer_file | default(evaluator_use_answer_file) | bool
+    - name: Stage live-validation answers when requested
+      ansible.builtin.copy:
+        src: "{{ playbook_dir | dirname }}/files/RHEL9_Answerfile.xml"
+        dest: /root/stig-answerfiles/RHEL9_Answerfile.xml
+        mode: '0600'
+      when: use_answer_file | default(evaluator_use_answer_file) | bool
+    - name: Create an empty answer directory for a native scan
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: rhel9-stig-native-answers-
+      register: native_answers
+      when: not (use_answer_file | default(evaluator_use_answer_file) | bool)
+    - name: Run selected Evaluate-STIG checks
+      ansible.builtin.command:
+        argv: >-
+          {{ rhel9_stig_scan_command +
+             (['-AFPath', '/root/stig-answerfiles', '-AnswerKey', evaluator_answer_key]
+              if use_answer_file | default(evaluator_use_answer_file) | bool
+              else ['-AFPath', native_answers.path]) }}
+      register: rhel9_stig_evaluation
+      changed_when: false
+      failed_when: false
+    - name: Remove the temporary native answer directory
+      ansible.builtin.file:
+        path: '{{ native_answers.path }}'
+        state: absent
+      when: not (use_answer_file | default(evaluator_use_answer_file) | bool)
+    - name: Create private controller artifact directory
+      ansible.builtin.file:
+        path: '{{ evaluator_artifacts_dir }}'
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+    - name: Save evaluator output on the controller
+      ansible.builtin.copy:
+        content: "{{ rhel9_stig_evaluation.stdout }}\n{{ rhel9_stig_evaluation.stderr }}\n"
+        dest: "{{ evaluator_artifacts_dir }}/{{ phase | default('evaluation') }}.txt"
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+    - name: Require successful evaluator execution
+      ansible.builtin.assert:
+        that: rhel9_stig_evaluation.rc == 0

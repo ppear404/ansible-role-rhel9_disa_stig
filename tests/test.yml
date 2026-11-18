@@ -1,0 +1,7 @@
+---
+- name: Apply RHEL 9 STIG remediation
+  hosts: rhel9
+  become: true
+  gather_facts: true
+  roles:
+    - role: rhel9_disa_stig

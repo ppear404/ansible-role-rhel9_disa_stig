@@ -1,0 +1,19 @@
+---
+- name: V-258144 - Ensure rsyslog is installed
+  ansible.builtin.package:
+    name: rsyslog
+    state: present
+
+- name: V-258144 | RHEL 9 must monitor all remote access methods.
+  ansible.builtin.lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: '^\s*(authpriv\.\*|auth\.\*;authpriv\.\*;daemon\.\*)\s+/var/log/secure\s*$'
+    line: 'auth.*;authpriv.*;daemon.* /var/log/secure'
+    backup: true
+  notify: Restart_rsyslog
+
+- name: V-258144 - Enable and start rsyslog
+  ansible.builtin.systemd_service:
+    name: rsyslog.service
+    enabled: true
+    state: started

@@ -1,0 +1,253 @@
+---
+# tasks file for rhel9-stig - STIG for RHEL 9 category 2 controls
+- name: Include shared filesystem mount options
+  ansible.builtin.include_tasks: mount_options.yml
+
+- name: Include V-257861 /boot nosuid protection
+  ansible.builtin.include_tasks:
+    file: V-257861.yml
+    apply:
+      tags:
+        - V-257861
+  tags:
+    - V-257861
+
+- name: Include V-257881 nodev protection for local partitions
+  ansible.builtin.include_tasks:
+    file: V-257881.yml
+    apply:
+      tags:
+        - V-257881
+  tags:
+    - V-257881
+
+- name: Include V-257852 home filesystem protection
+  ansible.builtin.include_tasks:
+    file: V-257852.yml
+    apply:
+      tags:
+        - V-257852
+  tags:
+    - V-257852
+
+- name: Include V-257863 shared-memory mount protection
+  ansible.builtin.include_tasks:
+    file: V-257863.yml
+    apply:
+      tags: [V-257863, V-257864, V-257865]
+
+  tags: [V-257863, V-257864, V-257865]
+
+- name: Include V-257789 GRUB authentication
+  ansible.builtin.include_tasks:
+    file: V-257789.yml
+    apply:
+      tags:
+        - V-257789
+  tags:
+    - V-257789
+
+  when: grub_password_hash is defined
+
+- name: Include V-258144 remote access logging
+  ansible.builtin.include_tasks:
+    file: V-258144.yml
+    apply:
+      tags: [V-258144]
+
+  tags: [V-258144]
+
+- name: Include V-258073 c shell permissions
+  ansible.builtin.include_tasks: V-258073.yml
+  tags:
+    - V-258073
+
+- name: Include V-257796 early process auditing
+  ansible.builtin.include_tasks:
+    file: V-257796.yml
+    apply:
+      tags:
+        - V-257796
+  tags:
+    - V-257796
+
+- name: Include V-258194 audit rules for gpasswd
+  ansible.builtin.include_tasks:
+    file: V-258194.yml
+    apply:
+      tags:
+        - V-258194
+  tags:
+    - V-258194
+
+- name: Include V-258198 audit rules for passwd
+  ansible.builtin.include_tasks:
+    file: V-258198.yml
+    apply:
+      tags:
+        - V-258198
+  tags:
+    - V-258198
+
+- name: Include V-257792 virtual system call mitigation
+  ansible.builtin.include_tasks:
+    file: V-257792.yml
+    apply:
+      tags:
+        - V-257792
+  tags:
+    - V-257792
+
+- name: Include V-257794 memory clearing
+  ansible.builtin.include_tasks:
+    file: V-257794.yml
+    apply:
+      tags:
+        - V-257794
+  tags:
+    - V-257794
+
+- name: Include V-257795 page-table isolation
+  ansible.builtin.include_tasks:
+    file: V-257795.yml
+    apply:
+      tags:
+        - V-257795
+  tags:
+    - V-257795
+
+- name: Include V-288832 useradd auditing
+  ansible.builtin.include_tasks:
+    file: V-288832.yml
+    apply:
+      tags:
+        - V-288832
+  tags:
+    - V-288832
+
+- name: Include V-258038 unauthorized peripheral protection
+  ansible.builtin.include_tasks:
+    file: V-258038.yml
+    apply:
+      tags:
+        - V-258038
+  tags:
+    - V-258038
+
+  when: rhel9_stig_usb_deny_all | bool
+
+- name: Include V-258174 audit failure mail aliases
+  ansible.builtin.include_tasks:
+    file: V-258174.yml
+    apply:
+      tags:
+        - V-258174
+  tags:
+    - V-258174
+
+  when: rhel9_stig_root_mail_recipients | length > 0
+
+- name: Include V-257793 page poisoning
+  ansible.builtin.include_tasks:
+    file: V-257793.yml
+    apply:
+      tags:
+        - V-257793
+  tags:
+    - V-257793
+
+- name: Include V-257951 mail relay restrictions
+  ansible.builtin.include_tasks:
+    file: V-257951.yml
+    apply:
+      tags:
+        - V-257951
+  tags:
+    - V-257951
+
+- name: Include V-258097 password-auth password quality
+  ansible.builtin.include_tasks:
+    file: V-258097.yml
+    apply:
+      tags:
+        - V-258097
+  tags:
+    - V-258097
+
+- name: Include V-258098 system-auth password quality
+  ansible.builtin.include_tasks:
+    file: V-258098.yml
+    apply:
+      tags:
+        - V-258098
+  tags:
+    - V-258098
+
+- name: Include V-258131 DoD authentication trust anchors
+  ansible.builtin.include_tasks:
+    file: V-258131.yml
+    apply:
+      tags:
+        - V-258131
+  tags:
+    - V-258131
+
+- name: Include V-257945 authoritative time synchronization
+  ansible.builtin.include_tasks:
+    file: V-257945.yml
+    apply:
+      tags:
+        - V-257945
+  tags:
+    - V-257945
+
+  when: rhel9_stig_time_servers | length > 0
+
+- name: Include V-258135 routine integrity scans and notification
+  ansible.builtin.include_tasks:
+    file: V-258135.yml
+    apply:
+      tags:
+        - V-258135
+  tags:
+    - V-258135
+
+- name: Include V-258150 cron logging
+  ansible.builtin.include_tasks:
+    file: V-258150.yml
+    apply:
+      tags:
+        - V-258150
+  tags:
+    - V-258150
+
+- name: Include V-258058 authorized local accounts
+  ansible.builtin.include_tasks:
+    file: V-258058.yml
+    apply:
+      tags:
+        - V-258058
+  tags:
+    - V-258058
+
+  when: rhel9_stig_authorized_local_accounts | length > 0
+
+- name: Include V-257937 V-257940 firewall review and validation
+  ansible.builtin.include_tasks:
+    file: firewall_review.yml
+    apply:
+      tags:
+        - V-257937
+        - V-257940
+  tags:
+    - V-257937
+    - V-257940
+
+  when: rhel9_stig_firewall_approval | length > 0
+
+- name: Include assessment configuration corrections
+  ansible.builtin.include_tasks:
+    file: assessment_remediation.yml
+    apply:
+      tags: [assessment-remediation]
+  tags: [assessment-remediation, V-257816, V-258000, V-258171, V-258189, V-258218, V-258228, V-258236, V-258241]

@@ -1,0 +1,4 @@
+[rhel9]
+rhel9-test ansible_connection=local
+
+# Syntax/lint inventory only. Never deploy the remediation role to this target.

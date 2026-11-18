@@ -1,0 +1,83 @@
+---
+- name: V-257816 - Disable user namespaces persistently and at runtime
+  tags: [V-257816]
+  ansible.posix.sysctl:
+    name: user.max_user_namespaces
+    value: '0'
+    sysctl_file: /etc/sysctl.d/99-user_max_user_namespaces.conf
+    sysctl_set: true
+    reload: true
+
+- name: V-258000 - Find SSH host private keys
+  tags: [V-258000]
+  ansible.builtin.find:
+    paths: /etc/ssh
+    patterns: 'ssh_host*_key'
+    file_type: file
+  register: rhel9_stig_host_keys
+
+- name: V-258000 - Protect SSH host private keys
+  tags: [V-258000]
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    mode: '0600'
+    owner: root
+  loop: '{{ rhel9_stig_host_keys.files }}'
+  loop_control:
+    label: '{{ item.path }}'
+  notify: Restart_sshd
+
+- name: V-258171 - Find audit rule files
+  tags: [V-258171]
+  ansible.builtin.find:
+    paths: /etc/audit/rules.d
+    patterns: '*.rules'
+    file_type: file
+  register: rhel9_stig_audit_files
+
+- name: V-258171 - Protect audit configuration
+  tags: [V-258171]
+  ansible.builtin.file:
+    path: '{{ item }}'
+    owner: root
+    group: root
+    mode: '0600'
+  loop: "{{ (rhel9_stig_audit_files.files | map(attribute='path') | list) + ['/etc/audit/audit.rules', '/etc/audit/auditd.conf'] }}"
+
+- name: V-258189 V-258218 V-258228 - Install required audit rules
+  tags: [V-258189, V-258218, V-258228]
+  ansible.builtin.copy:
+    dest: /etc/audit/rules.d/31-rhel9-stig-assessment.rules
+    owner: root
+    group: root
+    mode: '0600'
+    content: |
+      # DISA RHEL 9 V2R10: module removal, sudoers directory, immutable login UIDs.
+      -a always,exit -F arch=b32 -S delete_module -F auid>=1000 -F auid!=unset -k module_chng
+      -a always,exit -F arch=b64 -S delete_module -F auid>=1000 -F auid!=unset -k module_chng
+      -a always,exit -F arch=b32 -F path=/etc/sudoers.d -F perm=wa -k identity
+      -a always,exit -F arch=b64 -F path=/etc/sudoers.d -F perm=wa -k identity
+      --loginuid-immutable
+  notify: Augenrules_reload
+
+- name: V-258236 V-258241 - Read current crypto policy
+  tags: [V-258236, V-258241]
+  ansible.builtin.command: update-crypto-policies --show
+  register: rhel9_stig_crypto_policy
+  changed_when: false
+  check_mode: false
+
+- name: V-258236 V-258241 - Verify generated crypto policy
+  tags: [V-258236, V-258241]
+  ansible.builtin.command: update-crypto-policies --check
+  register: rhel9_stig_crypto_check
+  failed_when: false
+  changed_when: false
+  check_mode: false
+
+- name: V-258236 V-258241 - Apply unmodified FIPS policy
+  tags: [V-258236, V-258241]
+  ansible.builtin.command: update-crypto-policies --set FIPS
+  when: rhel9_stig_crypto_policy.stdout != 'FIPS' or rhel9_stig_crypto_check.rc != 0
+  changed_when: true
+  notify: Reboot_stig

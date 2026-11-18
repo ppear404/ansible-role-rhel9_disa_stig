@@ -1,0 +1,10 @@
+---
+# Installed independently; downloaded evaluator distributions are not committed.
+evaluator_root: /opt/eval_stig/evaluate-stig-1.2610.1/Src/Evaluate-STIG
+evaluator_artifacts_dir: '{{ playbook_dir }}/evidence'
+evaluator_output_dir: /opt/STIG_Compliance
+evaluator_answer_key: DEFAULT
+evaluator_use_answer_file: false
+# Required only by prepare-evaluator.yml:
+# evaluator_archive: /absolute/path/to/reviewed/evaluate-stig-1.2610.1.tar.gz
+# evaluator_install_dir: /opt/eval_stig

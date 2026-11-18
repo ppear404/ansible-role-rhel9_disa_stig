@@ -1,0 +1,84 @@
+---
+- name: V-257937 V-257940 - Require an approved firewall baseline
+  ansible.builtin.assert:
+    that:
+      - rhel9_stig_firewall_approval is mapping
+      - rhel9_stig_firewall_approval.approval | default('') | length > 0
+      - rhel9_stig_firewall_approval.services | default({}) | length > 0
+      - rhel9_stig_firewall_approval.interfaces | default([]) | length > 0
+    fail_msg: Configure the SA/ISSO-approved firewall baseline and retain PPSM assessment references.
+
+- name: V-257937 V-257940 - Ensure firewalld is installed
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+
+- name: V-257937 V-257940 - Ensure firewalld is active and enabled
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    enabled: true
+    state: started
+
+- name: V-257937 - Read permanent zone target
+  ansible.builtin.command:
+    argv: [firewall-cmd, --permanent, '--zone={{ rhel9_stig_firewall_approval.zone }}', --get-target]
+  register: rhel9_stig_firewall_target
+  changed_when: false
+  check_mode: false
+
+- name: V-257937 - Read runtime zone target
+  ansible.builtin.command:
+    argv: [firewall-cmd, '--zone={{ rhel9_stig_firewall_approval.zone }}', --list-all]
+  register: rhel9_stig_firewall_runtime_target
+  changed_when: false
+  check_mode: false
+
+- name: V-257937 - Set approved zone target to DROP
+  ansible.builtin.command:
+    argv: [firewall-cmd, --permanent, '--zone={{ rhel9_stig_firewall_approval.zone }}', --set-target=DROP]
+  when: rhel9_stig_firewall_target.stdout != 'DROP'
+  changed_when: true
+  register: rhel9_stig_firewall_target_update
+
+- name: V-257937 - Activate deny-all target while preserving approved service exceptions # noqa: no-handler
+  # Must activate before the live validator later in this task file.
+  ansible.builtin.command: firewall-cmd --reload
+  when: >-
+    rhel9_stig_firewall_target_update.changed or
+    rhel9_stig_firewall_runtime_target.stdout is not search('(?m)^\s*target: DROP$')
+  changed_when: true
+
+- name: V-257937 V-257940 - Install approved firewall review record
+  ansible.builtin.copy:
+    content: "{{ rhel9_stig_firewall_approval | to_nice_json }}\n"
+    dest: /etc/security/rhel9-stig-firewall-approved.json
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: V-257937 V-257940 - Install read-only firewall validation
+  ansible.builtin.copy:
+    src: firewall_validate.py
+    dest: /usr/local/sbin/rhel9-stig-firewall-validate
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: V-257940 - Discover installed service units
+  ansible.builtin.service_facts:
+
+- name: V-257940 - Disable RPC exposure outside the approved dev service baseline
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: false
+    state: stopped
+    masked: true
+  loop: [rpcbind.socket, rpcbind.service]
+  when: "'rpcbind.service' in ansible_facts.services"
+
+- name: V-257937 V-257940 - Validate the approved runtime and permanent firewall
+  ansible.builtin.command: /usr/local/sbin/rhel9-stig-firewall-validate
+  register: rhel9_stig_firewall_result
+  changed_when: false
+  failed_when: not (rhel9_stig_firewall_result.stdout | from_json).valid
+  when: not ansible_check_mode

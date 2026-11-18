@@ -1,0 +1,42 @@
+---
+- name: Install the PowerShell prerequisite
+  ansible.builtin.import_playbook: install-powershell.yml
+
+- name: Install a separately obtained Evaluate-STIG distribution
+  hosts: rhel9
+  become: true
+  gather_facts: false
+  vars_files:
+    - evaluator-vars.yml
+  vars:
+    evaluator_install_dir: /opt/eval_stig
+  tasks:
+    - name: Require an explicitly supplied local evaluator archive
+      ansible.builtin.assert:
+        that:
+          - evaluator_archive is defined
+          - evaluator_archive | default('') is match('^/')
+        fail_msg: Supply evaluator_archive as an absolute controller path to a reviewed distribution.
+    - name: Create evaluator installation directory
+      ansible.builtin.file:
+        path: '{{ evaluator_install_dir }}'
+        state: directory
+        mode: '0755'
+    - name: Install the reviewed evaluator archive
+      ansible.builtin.unarchive:
+        src: '{{ evaluator_archive }}'
+        dest: '{{ evaluator_install_dir }}'
+        creates: '{{ evaluator_root }}/Evaluate-STIG.ps1'
+    - name: Verify the selected evaluator entry point exists
+      ansible.builtin.stat:
+        path: '{{ evaluator_root }}/Evaluate-STIG.ps1'
+      register: evaluator_entry
+    - name: Require the configured evaluator root
+      ansible.builtin.assert:
+        that: evaluator_entry.stat.exists or ansible_check_mode
+        fail_msg: The archive layout does not match evaluator_root; review the selected release.
+    - name: Create private evaluator output directory
+      ansible.builtin.file:
+        path: /opt/STIG_Compliance
+        state: directory
+        mode: '0700'

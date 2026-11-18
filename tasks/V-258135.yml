@@ -1,0 +1,59 @@
+---
+- name: V-258135 - Install integrity scan and notification tools
+  ansible.builtin.dnf:
+    name:
+      - aide
+      - s-nail
+      - postfix
+    state: present
+
+- name: V-258135 - Inspect the approved AIDE baseline
+  ansible.builtin.stat:
+    path: /var/lib/aide/aide.db.gz
+  register: rhel9_stig_aide_baseline
+
+- name: V-258135 - Require an existing approved baseline
+  ansible.builtin.assert:
+    that:
+      - rhel9_stig_aide_baseline.stat.exists
+      - rhel9_stig_aide_baseline.stat.size | default(0) > 0
+    fail_msg: Initialize and approve the AIDE baseline before enabling routine scans; never automatically rebaseline a potentially changed host.
+
+- name: V-258135 - Install the daily scan and notification script
+  ansible.builtin.copy:
+    src: v258135/aide-check
+    dest: /usr/local/sbin/rhel9-stig-aide-check
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: V-258135 - Install the scan service and timer
+  ansible.builtin.copy:
+    src: v258135/{{ item }}
+    dest: /etc/systemd/system/{{ item }}
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - rhel9-stig-aide.service
+    - rhel9-stig-aide.timer
+  register: rhel9_stig_aide_units
+
+- name: V-258135 - Enable local mail submission
+  ansible.builtin.systemd_service:
+    name: postfix.service
+    enabled: true
+    state: started
+
+- name: V-258135 - Inspect installed timer
+  ansible.builtin.stat:
+    path: /etc/systemd/system/rhel9-stig-aide.timer
+  register: rhel9_stig_aide_timer
+
+- name: V-258135 - Enable daily integrity scans
+  ansible.builtin.systemd_service:
+    name: rhel9-stig-aide.timer
+    daemon_reload: "{{ rhel9_stig_aide_units.changed }}"
+    enabled: true
+    state: started
+  when: not ansible_check_mode or rhel9_stig_aide_timer.stat.exists

@@ -1,0 +1,33 @@
+# Local credentials and inventory
+/.agents/
+/.aws/
+/.codex/
+/inventory/*
+!/inventory/hosts.ini.example
+!/inventory/group_vars.example.yml
+*.pem.key
+*.key
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+# Downloaded references and private assessment results
+/files/evaluate-stig-*/
+/files/U_RHEL_*/
+*.ckl
+*.cklb
+/tests/evidence/*
+!/tests/evidence/.gitkeep
+/artifacts/
+# Ansible, Python and editors
+.ansible/
+.cache/
+__pycache__/
+*.py[cod]
+*.retry
+*.log
+.venv/
+.vscode/
+.idea/
+*~

@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  role_name: rhel9_disa_stig
+  author: ppear
+  description: RHEL 9 DISA STIG V2R10 remediation aligned with the RHEL 10 role
+  license: MIT-0
+  min_ansible_version: '2.16'
+  platforms:
+    - name: EL
+      versions: ['9']
+  galaxy_tags: [security, stig, rhel]
+dependencies: []

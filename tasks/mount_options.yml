@@ -1,0 +1,23 @@
+---
+- name: Read persistent mount configuration for shared protections
+  ansible.builtin.slurp:
+    src: /etc/fstab
+  register: rhel9_stig_shared_fstab
+
+- name: Apply shared persistent and runtime mount protections
+  vars:
+    entries: "{{ (rhel9_stig_shared_fstab.content | b64decode).splitlines() | reject('match', '^[ \t]*(#|$)') | map('split') | list }}"
+    entry: "{{ entries | selectattr(1, 'equalto', item.path) | first }}"
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    src: "{{ entry[0] }}"
+    fstype: "{{ entry[2] }}"
+    opts: "{{ ((entry[3].split(',') | reject('in', ['dev', 'suid', 'exec']) | list) + item.opts.split(',')) | unique | join(',') }}"
+    dump: "{{ entry[4] }}"
+    passno: "{{ entry[5] }}"
+    state: mounted
+    backup: true
+  loop: "{{ mount_options }}"
+  loop_control:
+    label: "{{ item.path }}"
+  notify: Reload_systemd

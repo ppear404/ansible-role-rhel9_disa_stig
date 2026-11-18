@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: MIT-0
+---
+# handlers file for rhel9-stig
+- name: Reload_systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Remount_dev_shm
+  ansible.posix.mount:
+    path: /dev/shm
+    state: remounted
+
+- name: Remount_boot
+  ansible.posix.mount:
+    path: /boot
+    state: remounted
+
+- name: Augenrules_reload
+  ansible.builtin.include_tasks: reload_audit.yml
+
+- name: Rebuild_grub
+  changed_when: true
+  ansible.builtin.command: >-
+    grub2-mkconfig -o /boot/grub2/grub.cfg{{ ' --update-bls-cmdline' if ansible_facts.distribution_version is version('9.3', '>=') else '' }}
+
+- name: Restart_rsyslog
+  ansible.builtin.systemd:
+    name: rsyslog.service
+    state: restarted
+
+- name: Restart_usbguard
+  ansible.builtin.systemd_service:
+    name: usbguard.service
+    state: restarted
+
+- name: Rebuild_mail_aliases
+  ansible.builtin.command: newaliases
+  changed_when: true
+
+- name: Reload_postfix
+  ansible.builtin.systemd_service:
+    name: postfix.service
+    state: reloaded
+  when: ansible_facts.services.get('postfix.service', {}).get('state', '') == 'running'
+
+- name: Restart_sssd
+  ansible.builtin.systemd_service:
+    name: sssd.service
+    state: restarted
+  when: ansible_facts.services.get('sssd.service', {}).get('state', '') == 'running'
+
+- name: Restart_chronyd
+  ansible.builtin.systemd_service:
+    name: chronyd.service
+    state: restarted
+
+- name: Reboot_stig
+  ansible.builtin.reboot:
+    msg: Rebooting to activate STIG kernel and audit settings
+    reboot_timeout: 600
+
+- name: Restart_sshd
+  ansible.builtin.systemd_service:
+    name: sshd.service
+    state: restarted
