@@ -1,0 +1,142 @@
+{
+  "client_id": "ui",
+  "customizations": {
+    "files": [
+      {
+        "data": "W1VuaXRdCkRlc2NyaXB0aW9uPUN1c3RvbSBmaXJzdCBib290IHNjcmlwdApDb25kaXRpb25GaWxlSXNFeGVjdXRhYmxlPS91c3IvbG9jYWwvc2Jpbi9jdXN0b20tZmlyc3QtYm9vdApDb25kaXRpb25QYXRoRXhpc3RzPSEvdmFyL2xvY2FsLy5jdXN0b20tZmlyc3QtYm9vdC1kb25lCldhbnRzPW5ldHdvcmstb25saW5lLnRhcmdldApBZnRlcj1zZWxpbnV4LWF1dG9yZWxhYmVsLnNlcnZpY2UKQWZ0ZXI9bmV0d29yay1vbmxpbmUudGFyZ2V0CkFmdGVyPW9zYnVpbGQtZmlyc3QtYm9vdC5zZXJ2aWNlCkFmdGVyPXJlZ2lzdGVyLXNhdGVsbGl0ZS5zZXJ2aWNlCkFmdGVyPWFhcC1maXJzdC1ib290LXJlZy5zZXJ2aWNlCgpbU2VydmljZV0KVHlwZT1vbmVzaG90CkV4ZWNTdGFydD0vdXNyL2xvY2FsL3NiaW4vY3VzdG9tLWZpcnN0LWJvb3QKRXhlY1N0YXJ0UG9zdD0vdXNyL2Jpbi90b3VjaCAvdmFyL2xvY2FsLy5jdXN0b20tZmlyc3QtYm9vdC1kb25lClJlbWFpbkFmdGVyRXhpdD15ZXMKCltJbnN0YWxsXQpXYW50ZWRCeT1tdWx0aS11c2VyLnRhcmdldAo=",
+        "data_encoding": "base64",
+        "ensure_parents": true,
+        "path": "/etc/systemd/system/custom-first-boot.service"
+      },
+      {
+        "data": "IyEvYmluL2Jhc2gKCiMgY3JlYXRlIGFuc2libGUgcmVtb3RlIHRtcApta2RpciAtcCAvYW5zaWJsZS90bXAKY2hvd24gLVIgYW5zaWJsZTphbnNpYmxlIC9hbnNpYmxlCgojIGNyZWF0ZSAyMC1hbnNpYmxlLnJ1bGVzIGZvciBmYXBvbGljeWQKY2F0ID4gL2V0Yy9mYXBvbGljeWQvcnVsZXMuZC8yMC1hbnNpYmxlLnJ1bGVzIDw8IEVPRgphbGxvdyBwZXJtPWFueSB1aWQ9YW5zaWJsZSA6IGRpcj0vYW5zaWJsZS90bXAvCkVPRgoKZmFnZW5ydWxlcyAtLWxvYWQ=",
+        "data_encoding": "base64",
+        "ensure_parents": true,
+        "mode": "0774",
+        "path": "/usr/local/sbin/custom-first-boot"
+      }
+    ],
+    "filesystem": [
+      {
+        "min_size": 10737418240,
+        "mountpoint": "/"
+      },
+      {
+        "min_size": 1073741824,
+        "mountpoint": "/home"
+      },
+      {
+        "min_size": 1073741824,
+        "mountpoint": "/tmp"
+      },
+      {
+        "min_size": 3221225472,
+        "mountpoint": "/var"
+      },
+      {
+        "min_size": 1073741824,
+        "mountpoint": "/var/log"
+      },
+      {
+        "min_size": 10737418240,
+        "mountpoint": "/var/log/audit"
+      },
+      {
+        "min_size": 1073741824,
+        "mountpoint": "/var/tmp"
+      }
+    ],
+    "fips": {
+      "enabled": true
+    },
+    "hostname": "rhel9-fips-base-v001",
+    "kernel": {
+      "append": "audit_backlog_limit=8192 audit=1 page_poison=1 vsyscall=none pti=on init_on_free=1"
+    },
+    "locale": {
+      "languages": [
+        "C.UTF-8"
+      ]
+    },
+    "openscap": {
+      "profile_id": "xccdf_org.ssgproject.content_profile_stig"
+    },
+    "packages": [
+      "setools-console",
+      "setools",
+      "libicu",
+      "bc",
+      "audit",
+      "audispd-plugins",
+      "usbguard",
+      "openssh-server",
+      "openssh-clients",
+      "chrony",
+      "s-nail",
+      "postfix",
+      "fapolicyd",
+      "policycoreutils",
+      "policycoreutils-python-utils",
+      "libreswan",
+      "firewalld",
+      "rsyslog",
+      "rsyslog-gnutls",
+      "openssl-pkcs11",
+      "pcsc-lite",
+      "opensc",
+      "subscription-manager",
+      "rng-tools",
+      "nss-tools",
+      "gnutls-utils",
+      "sudo",
+      "crypto-policies",
+      "aide"
+    ],
+    "services": {
+      "enabled": [
+        "auditd",
+        "usbguard",
+        "sshd",
+        "chronyd",
+        "fapolicyd",
+        "firewalld",
+        "systemd-journald",
+        "rsyslog",
+        "pcscd",
+        "custom-first-boot"
+      ],
+      "masked": [
+        "kdump",
+        "autofs",
+        "debug-shell"
+      ]
+    },
+    "timezone": {
+      "timezone": "Europe/Berlin"
+    },
+    "users": [
+      {
+        "groups": [
+          "wheel"
+        ],
+        "hasPassword": true,
+        "name": "ansible",
+        "password": "$6$e01epWSWvj2TIh6X$kSXkodQVECu3dWE3mLKT3yJqUy0k6bij3TVvYjTxkczSnL225e3Q6fvjmTnU8tWLdSDHw9lPtgp22ReGhU.a1.",
+        "ssh_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDlQ0RSLCVenyzFIFVbMpTaoEpKlc9B0DjFMO78qT87SI/1qMfMNE22PCgyfK8VvERICszb+KZG0bBtFt6t/d8u76moX4ggb0loeP0kZaBRokCV55dymNWvftfp+v54fQvZDDds+TD/S3zenFn1En/Ly4Mk/XPkJzD7xeuG7b54EfqTi4771eOblqMNMaGjfbiHr4Cb+7CUC/Z2eT9/YChYMq5nu9wmaZ0faOBk236p8XfJZAiamnTTRUCMmLp7KAIXkO2e2qeQPoaaT97Y0GASIxRx7Aat9hidwKJltXMIGGorN48Mp6bPFejfxsmgNRYZtXWYKEBndsnUunMs3HHSzUlYAmSkDRJDiNpbfcUI5p0RcAaeikZrbhbLDshlWFe9OZKuovZOnNtjNJfbWZJ68moel9JeByuAemjg60apLGjW867AMUg3EmJZCcjglfv/WROlbqlvH54g/GR9wcp2Nf46hFzlPHQvuF7uQLWThmBRN7hYVeD7QDuUfgWydqcGJJWW9O3ITFjw+/5STBlEB8tRmCyjaLs/zEmWEgJT4kaq0+slkm9KZVrdhcfQqogvBovFYxOn5laOkhu9EQpAv3Tk9myXaYIutjU0mjJMq5MqjWMtYukTB670mRS5ouO+8e6VsbSKGXbGMBj3tNZZgZCfw3BVPCZ1UpidvejkaQ== 2027_rhel9_dev"
+      }
+    ]
+  },
+  "distribution": "rhel-9",
+  "image_description": "rhel9 base image for fips complaint build",
+  "image_name": "rhel-9-fips-x86_64-20261117-0908",
+  "image_requests": [
+    {
+      "architecture": "x86_64",
+      "image_type": "image-installer",
+      "upload_request": {
+        "options": {},
+        "type": "aws.s3"
+      }
+    }
+  ]
+}
